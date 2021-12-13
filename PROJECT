@@ -1,0 +1,16 @@
+domain: kubeform.com
+layout:
+- go.kubebuilder.io/v3
+projectName: module-controller
+repo: github.com/shahincsejnu/module-controller
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: kubeform.com
+  group: tf
+  kind: Module
+  path: github.com/shahincsejnu/module-controller/api/v1alpha1
+  version: v1alpha1
+version: "3"
