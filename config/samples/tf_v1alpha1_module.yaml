@@ -3,4 +3,11 @@ kind: Module
 metadata:
   name: module-sample
 spec:
-  # TODO(user): Add fields here
+  providerName: linode
+  resource:
+    input:
+      linodeToken: ""
+  moduleDef:
+    name: "linode/k8s/linode"
+  providerRef:
+    name: linode-credentials

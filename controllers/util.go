@@ -23,6 +23,7 @@ import (
 	"ekyu.moe/base91"
 	"encoding/json"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/fatih/structs"
 	"github.com/gobuffalo/flect"
 	"gocloud.dev/secrets"
@@ -46,6 +47,7 @@ var SecretKey string
 func StartProcess(rClient client.Client, ctx context.Context, gv schema.GroupVersion, obj *unstructured.Unstructured) error {
 	err := initialUpdateStatus(rClient, ctx, gv, obj, nil, true)
 	if err != nil {
+		fmt.Println("1")
 		return err
 	}
 
@@ -53,8 +55,10 @@ func StartProcess(rClient client.Client, ctx context.Context, gv schema.GroupVer
 	if err != nil {
 		err2 := initialUpdateStatus(rClient, ctx, gv, obj, err, false)
 		if err2 != nil {
+			fmt.Println("2")
 			return err2
 		}
+		fmt.Println("3")
 		return err
 	}
 
@@ -73,6 +77,7 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 	// let's suppose moduleDef is the module source for now, in future would do it from ModuleDefinition
 	moduleDef, found, err := unstructured.NestedString(obj.Object, "spec", "moduleDef", "name")
 	if err != nil {
+		fmt.Println("4")
 		return err
 	}
 	if !found {
@@ -116,38 +121,38 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 			return err
 		}
 	}
-
+	fmt.Println("oka let's start")
 	err = createFiles(resPath, mainFile)
 	if err != nil {
 		return err
 	}
-
+	fmt.Println("before mainTFJson")
 	mainTfJson, err := mainTFJson(rClient, ctx, moduleDef, providerName, moduleName, obj)
 	err = ioutil.WriteFile(mainFile, mainTfJson, 0777)
 	if err != nil {
 		return err
 	}
-
+	fmt.Println("before terraformInit")
 	err = terraformInit(resPath)
 	if err != nil {
 		return err
 	}
-
+	fmt.Println("before createTFStteFile")
 	err = createTFStateFile(stateFile, gv, obj)
 	if err != nil {
 		return err
 	}
-
+	fmt.Println("before terraformApply")
 	err = terraformApply(resPath)
 	if err != nil {
 		return err
 	}
-
+	fmt.Println("before updateTFStateFile")
 	err = updateTFStateFile(stateFile, gv, obj)
 	if err != nil {
 		return err
 	}
-
+	fmt.Println("before updateOutputField")
 	err = updateOutputField(resPath, moduleName, outputFile, gv, obj)
 	if err != nil {
 		return err
@@ -157,6 +162,7 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 }
 
 func mainTFJson(rClient client.Client, ctx context.Context, source, providerName, moduleName string, obj *unstructured.Unstructured) ([]byte, error) {
+	spew.Dump(obj.Object)
 	input, found, err := unstructured.NestedMap(obj.Object, "spec", "resource", "input")
 	if err != nil {
 		return nil, err
@@ -166,12 +172,16 @@ func mainTFJson(rClient client.Client, ctx context.Context, source, providerName
 	}
 
 	pureInput := make(map[string]interface{})
-
+	fmt.Println("let's see the input")
+	spew.Dump(input)
+	fmt.Println("after printing input")
 	for key, val := range input {
 		pureInput[flect.Underscore(key)] = val
 	}
 	pureInput["source"] = source
-
+	fmt.Println("let's see the pure input")
+	spew.Dump(pureInput)
+	fmt.Println("after prinint pure input")
 	jsnInput, err := json.Marshal(pureInput)
 	if err != nil {
 		return nil, err
@@ -179,13 +189,14 @@ func mainTFJson(rClient client.Client, ctx context.Context, source, providerName
 
 	finalJson := []byte(`{`)
 
+	// now hardcoded providerSource, later will read from ModuleDef
 	finalJson = append(finalJson, []byte(`"terraform": {
 		"required_providers": {
 			"`+providerName+`": {
 				"source": "terraform-providers/linode"
 			}
 		}
-	}`)...)
+	},`)...)
 
 	providerRef, found, err := unstructured.NestedString(obj.Object, "spec", "providerRef", "name")
 	if err != nil {
@@ -207,7 +218,7 @@ func mainTFJson(rClient client.Client, ctx context.Context, source, providerName
 
 	finalJson = append(finalJson, []byte(`"provider": { "`+providerName+`": `)...)
 	finalJson = append(finalJson, providerSecretData...)
-	finalJson = append(finalJson, []byte(`}`)...)
+	finalJson = append(finalJson, []byte(`},`)...)
 
 	moduleData := []byte(`{"` + moduleName + `":`)
 	moduleData = append(moduleData, jsnInput...)

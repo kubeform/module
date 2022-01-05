@@ -16,7 +16,11 @@ spec:
     singular: module
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Module is the Schema for the modules API
@@ -36,7 +40,7 @@ spec:
           spec:
             description: ModuleSpec defines the desired state of Module
             properties:
-              moduleRef:
+              moduleDef:
                 description: LocalObjectReference contains enough information to let
                   you locate the referenced object inside the same namespace.
                 properties:
@@ -45,6 +49,8 @@ spec:
                       TODO: Add other useful fields. apiVersion, kind, uid?'
                     type: string
                 type: object
+              providerName:
+                type: string
               providerRef:
                 description: LocalObjectReference contains enough information to let
                   you locate the referenced object inside the same namespace.
@@ -58,13 +64,16 @@ spec:
                 properties:
                   input:
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   output:
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
                 type: object
               state:
                 type: string
             required:
-            - moduleRef
+            - moduleDef
+            - providerName
             - providerRef
             - resource
             type: object

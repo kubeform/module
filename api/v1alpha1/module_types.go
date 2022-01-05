@@ -25,7 +25,10 @@ import (
 )
 
 type ModuleResource struct {
-	Input  *runtime.RawExtension `json:"input,omitempty" tf:"-"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Input *runtime.RawExtension `json:"input,omitempty" tf:"-"`
+	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Output *runtime.RawExtension `json:"output,omitempty" tf:"-"`
 }
 
@@ -51,6 +54,7 @@ type ModuleStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
 
 // Module is the Schema for the modules API
 type Module struct {
