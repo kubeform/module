@@ -553,35 +553,35 @@ func encodeState(data []byte) (string, error) {
 }
 
 func updateOutputField(resPath, outputFile, moduleName string, gv schema.GroupVersion, obj *unstructured.Unstructured) error {
-	//	_, err := os.Stat(outputFile)
-	//	if os.IsNotExist(err) {
-	//		data, err := meta.MarshalToJson(obj, gv)
-	//		if err != nil {
-	//			return err
-	//		}
-	//
-	//		typedObj, err := meta.UnmarshalFromJSON(data, gv)
-	//		if err != nil {
-	//			return err
-	//		}
-	//
-	//		typedStruct := structs.New(typedObj)
-	//		outputData := []byte(``)
-	//		output := reflect.TypeOf(typedStruct.Field("Spec").Field("Output").Value()).Elem()
-	//
-	//		for i := 0; i < output.NumField(); i++ {
-	//			field := output.Field(i).Tag.Get("tf")
-	//			outputData = append(outputData, []byte(`output "`+field+`" {
-	//value = module.`+moduleName+`.`+field+`
-	//}
-	//`)...)
-	//		}
-	//
-	//		err = ioutil.WriteFile(outputFile, outputData, 0644)
-	//		if err != nil {
-	//			return err
-	//		}
-	//	}
+	_, err := os.Stat(outputFile)
+	if os.IsNotExist(err) {
+		data, err := meta.MarshalToJson(obj, gv)
+		if err != nil {
+			return err
+		}
+
+		typedObj, err := meta.UnmarshalFromJSON(data, gv)
+		if err != nil {
+			return err
+		}
+
+		typedStruct := structs.New(typedObj)
+		outputData := []byte(``)
+		output := reflect.TypeOf(typedStruct.Field("Spec").Field("Resource").Field("Output").Value()).Elem()
+
+		for i := 0; i < output.NumField(); i++ {
+			field := output.Field(i).Tag.Get("tf")
+			outputData = append(outputData, []byte(`output "`+field+`" {
+	value = module.`+moduleName+`.`+field+`
+	}
+	`)...)
+		}
+
+		err = ioutil.WriteFile(outputFile, outputData, 0644)
+		if err != nil {
+			return err
+		}
+	}
 
 	value, err := terraformOutput(resPath)
 	if err != nil {
