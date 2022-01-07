@@ -34,11 +34,12 @@ type ModuleResource struct {
 
 // ModuleSpec defines the desired state of Module
 type ModuleSpec struct {
-	ProviderName string                     `json:"providerName" tf:"-"`
-	ModuleDef    *core.LocalObjectReference `json:"moduleDef" tf:"-"`
-	Resource     *ModuleResource            `json:"resource" tf:"-"`
-	ProviderRef  *core.LocalObjectReference `json:"providerRef" tf:"-"`
-	State        string                     `json:"state,omitempty" tf:"-"`
+	ProviderName   string                     `json:"providerName" tf:"-"`
+	ProviderSource string                     `json:"providerSource" tf:"-"`
+	ModuleDef      *core.LocalObjectReference `json:"moduleDef" tf:"-"`
+	Resource       *ModuleResource            `json:"resource" tf:"-"`
+	ProviderRef    *core.LocalObjectReference `json:"providerRef" tf:"-"`
+	State          string                     `json:"state,omitempty" tf:"-"`
 }
 
 // ModuleStatus defines the observed state of Module

@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	ekyu.moe/base91 v0.2.3
+	github.com/davecgh/go-spew v1.1.1
 	github.com/fatih/structs v1.1.0
 	github.com/go-logr/logr v0.4.0
 	github.com/gobuffalo/flect v0.2.4

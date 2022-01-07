@@ -1,0 +1,25 @@
+before updateTFStateFile
+before updateOutputField
+panic: field not found
+
+goroutine 215 [running]:
+github.com/fatih/structs.(*Field).Field(...)
+        /home/sahadat/go/src/github.com/shahincsejnu/module-controller/vendor/github.com/fatih/structs/field.go:111
+github.com/shahincsejnu/module-controller/controllers.updateOutputField(0xc0004605d0, 0x2e, 0xc00016acf0, 0x14, 0xc00014f280, 0x38, 0x191ea3d, 0xf, 0x1916656, 0x8, ...)
+        /home/sahadat/go/src/github.com/shahincsejnu/module-controller/controllers/util.go:570 +0xad7
+github.com/shahincsejnu/module-controller/controllers.reconcile(0x1b4ea68, 0xc0003720f0, 0x1b3b578, 0xc00061fb30, 0x191ea3d, 0xf, 0x1916656, 0x8, 0xc0005a2240, 0x0, ...)
+        /home/sahadat/go/src/github.com/shahincsejnu/module-controller/controllers/util.go:164 +0xd05
+github.com/shahincsejnu/module-controller/controllers.StartProcess(0x1b4ea68, 0xc0003720f0, 0x1b3b578, 0xc00061fb30, 0x191ea3d, 0xf, 0x1916656, 0x8, 0xc0005a2240, 0x0, ...)
+        /home/sahadat/go/src/github.com/shahincsejnu/module-controller/controllers/util.go:55 +0x145
+github.com/shahincsejnu/module-controller/controllers.(*ModuleReconciler).Reconcile(0xc0003c76e0, 0x1b3b578, 0xc00061fb30, 0xc000430010, 0x7, 0xc0001c1410, 0x14, 0xc00061fb30, 0xc00061fb00, 0xc00065ddb0, ...)
+        /home/sahadat/go/src/github.com/shahincsejnu/module-controller/controllers/module_controller.go:73 +0x529
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller).Reconcile(0xc00032a460, 0x1b3b578, 0xc00061fb00, 0xc000430010, 0x7, 0xc0001c1410, 0x14, 0xc00061fb00, 0x0, 0x0, ...)
+        /home/sahadat/go/src/github.com/shahincsejnu/module-controller/vendor/sigs.k8s.io/controller-runtime/pkg/internal/controller/controller.go:114 +0x247
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller).reconcileHandler(0xc00032a460, 0x1b3b4d0, 0xc0001f5cc0, 0x1783ce0, 0xc0006211e0)
+        /home/sahadat/go/src/github.com/shahincsejnu/module-controller/vendor/sigs.k8s.io/controller-runtime/pkg/internal/controller/controller.go:311 +0x305
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller).processNextWorkItem(0xc00032a460, 0x1b3b4d0, 0xc0001f5cc0, 0x100000000442d00)
+        /home/sahadat/go/src/github.com/shahincsejnu/module-controller/vendor/sigs.k8s.io/controller-runtime/pkg/internal/controller/controller.go:266 +0x205
+sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller).Start.func2.2(0xc000221910, 0xc00032a460, 0x1b3b4d0, 0xc0001f5cc0)
+        /home/sahadat/go/src/github.com/shahincsejnu/module-controller/vendor/sigs.k8s.io/controller-runtime/pkg/internal/controller/controller.go:227 +0x6b
+created by sigs.k8s.io/controller-runtime/pkg/internal/controller.(*Controller).Start.func2
+        /home/sahadat/go/src/github.com/shahincsejnu/module-controller/vendor/sigs.k8s.io/controller-runtime/pkg/internal/controller/controller.go:223 +0x425

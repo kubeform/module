@@ -1,0 +1,15 @@
+apiVersion: tf.kubeform.com/v1alpha1
+kind: Module
+metadata:
+  name: aws-s3-module-sample
+spec:
+  providerName: aws
+  providerSource: "hashicorp/aws"
+  resource:
+    input:
+      bucket: "kubeform-module"
+      forceDestroy: true
+  moduleDef:
+    name: "terraform-aws-modules/s3-bucket/aws"
+  providerRef:
+    name: aws-credentials

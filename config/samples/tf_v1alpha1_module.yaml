@@ -4,6 +4,7 @@ metadata:
   name: module-sample
 spec:
   providerName: linode
+  providerSource:
   resource:
     input:
       linodeToken: ""

@@ -27,6 +27,7 @@ import (
 	"github.com/fatih/structs"
 	"github.com/gobuffalo/flect"
 	"gocloud.dev/secrets"
+	_ "gocloud.dev/secrets/localsecrets"
 	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -72,6 +73,13 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 	}
 	if !found {
 		return fmt.Errorf("providerName is not found")
+	}
+	providerSource, found, err := unstructured.NestedString(obj.Object, "spec", "providerSource")
+	if err != nil {
+		return err
+	}
+	if !found {
+		return fmt.Errorf("providerSource is not found")
 	}
 
 	// let's suppose moduleDef is the module source for now, in future would do it from ModuleDefinition
@@ -127,7 +135,7 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 		return err
 	}
 	fmt.Println("before mainTFJson")
-	mainTfJson, err := mainTFJson(rClient, ctx, moduleDef, providerName, moduleName, obj)
+	mainTfJson, err := mainTFJson(rClient, ctx, moduleDef, providerName, providerSource, moduleName, obj)
 	err = ioutil.WriteFile(mainFile, mainTfJson, 0777)
 	if err != nil {
 		return err
@@ -161,7 +169,7 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 	return nil
 }
 
-func mainTFJson(rClient client.Client, ctx context.Context, source, providerName, moduleName string, obj *unstructured.Unstructured) ([]byte, error) {
+func mainTFJson(rClient client.Client, ctx context.Context, source, providerName, providerSource, moduleName string, obj *unstructured.Unstructured) ([]byte, error) {
 	spew.Dump(obj.Object)
 	input, found, err := unstructured.NestedMap(obj.Object, "spec", "resource", "input")
 	if err != nil {
@@ -193,7 +201,7 @@ func mainTFJson(rClient client.Client, ctx context.Context, source, providerName
 	finalJson = append(finalJson, []byte(`"terraform": {
 		"required_providers": {
 			"`+providerName+`": {
-				"source": "terraform-providers/linode"
+				"source": "`+providerSource+`"
 			}
 		}
 	},`)...)
@@ -545,35 +553,35 @@ func encodeState(data []byte) (string, error) {
 }
 
 func updateOutputField(resPath, outputFile, moduleName string, gv schema.GroupVersion, obj *unstructured.Unstructured) error {
-	_, err := os.Stat(outputFile)
-	if os.IsNotExist(err) {
-		data, err := meta.MarshalToJson(obj, gv)
-		if err != nil {
-			return err
-		}
-
-		typedObj, err := meta.UnmarshalFromJSON(data, gv)
-		if err != nil {
-			return err
-		}
-
-		typedStruct := structs.New(typedObj)
-		outputData := []byte(``)
-		output := reflect.TypeOf(typedStruct.Field("Spec").Field("Output").Value()).Elem()
-
-		for i := 0; i < output.NumField(); i++ {
-			field := output.Field(i).Tag.Get("tf")
-			outputData = append(outputData, []byte(`output "`+field+`" { 
-value = module.`+moduleName+`.`+field+` 
-}
-`)...)
-		}
-
-		err = ioutil.WriteFile(outputFile, outputData, 0644)
-		if err != nil {
-			return err
-		}
-	}
+	//	_, err := os.Stat(outputFile)
+	//	if os.IsNotExist(err) {
+	//		data, err := meta.MarshalToJson(obj, gv)
+	//		if err != nil {
+	//			return err
+	//		}
+	//
+	//		typedObj, err := meta.UnmarshalFromJSON(data, gv)
+	//		if err != nil {
+	//			return err
+	//		}
+	//
+	//		typedStruct := structs.New(typedObj)
+	//		outputData := []byte(``)
+	//		output := reflect.TypeOf(typedStruct.Field("Spec").Field("Output").Value()).Elem()
+	//
+	//		for i := 0; i < output.NumField(); i++ {
+	//			field := output.Field(i).Tag.Get("tf")
+	//			outputData = append(outputData, []byte(`output "`+field+`" {
+	//value = module.`+moduleName+`.`+field+`
+	//}
+	//`)...)
+	//		}
+	//
+	//		err = ioutil.WriteFile(outputFile, outputData, 0644)
+	//		if err != nil {
+	//			return err
+	//		}
+	//	}
 
 	value, err := terraformOutput(resPath)
 	if err != nil {

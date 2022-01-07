@@ -60,6 +60,8 @@ spec:
                       TODO: Add other useful fields. apiVersion, kind, uid?'
                     type: string
                 type: object
+              providerSource:
+                type: string
               resource:
                 properties:
                   input:
@@ -75,6 +77,7 @@ spec:
             - moduleDef
             - providerName
             - providerRef
+            - providerSource
             - resource
             type: object
           status:
