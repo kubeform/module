@@ -62,8 +62,14 @@ func StartProcess(rClient client.Client, ctx context.Context, gv schema.GroupVer
 		fmt.Println("3")
 		return err
 	}
-
-	return finalUpdateStatus(rClient, ctx, obj)
+	fmt.Println("before finalupdatestatus")
+	spew.Dump(obj.Object)
+	err = finalUpdateStatus(rClient, ctx, obj)
+	if err != nil {
+		return err
+	}
+	fmt.Println("updated finalUpdateStatus")
+	return nil
 }
 
 func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersion, obj *unstructured.Unstructured) error {
@@ -156,12 +162,12 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 		return err
 	}
 	fmt.Println("before updateTFStateFile")
-	err = updateTFStateFile(stateFile, gv, obj)
+	err = updateTFStateFile(rClient, ctx, stateFile, gv, obj)
 	if err != nil {
 		return err
 	}
 	fmt.Println("before updateOutputField")
-	err = updateOutputField(resPath, moduleName, outputFile, gv, obj)
+	err = updateOutputField(rClient, ctx, resPath, moduleName, outputFile, gv, obj)
 	if err != nil {
 		return err
 	}
@@ -456,7 +462,7 @@ func createTFStateFile(filePath string, gv schema.GroupVersion, obj *unstructure
 	return nil
 }
 
-func updateTFStateFile(filePath string, gv schema.GroupVersion, obj *unstructured.Unstructured) error {
+func updateTFStateFile(rClient client.Client, ctx context.Context, filePath string, gv schema.GroupVersion, obj *unstructured.Unstructured) error {
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return err
@@ -475,16 +481,21 @@ func updateTFStateFile(filePath string, gv schema.GroupVersion, obj *unstructure
 	stateValue := typedStruct.Field("Spec").Field("State").Value()
 
 	if stateValue.(string) == "" || !reflect.DeepEqual([]byte(stateValue.(string)), data) {
+		fmt.Println("let's see the unprocessed data .......................")
+		fmt.Println(data)
 		processedData, err := encodeState(data)
 		if err != nil {
 			return err
 		}
-
+		fmt.Println("let's see the processed data ..........................: ")
+		fmt.Println(processedData)
 		err = unstructured.SetNestedField(obj.Object, processedData, "spec", "state")
 		if err != nil {
 			return fmt.Errorf("failed to update spec state : %s", err)
 		}
-
+		if err := rClient.Update(ctx, obj); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -552,7 +563,7 @@ func encodeState(data []byte) (string, error) {
 	return base91.EncodeToString(cipherText), nil
 }
 
-func updateOutputField(resPath, outputFile, moduleName string, gv schema.GroupVersion, obj *unstructured.Unstructured) error {
+func updateOutputField(rClient client.Client, ctx context.Context, resPath, outputFile, moduleName string, gv schema.GroupVersion, obj *unstructured.Unstructured) error {
 	_, err := os.Stat(outputFile)
 	if os.IsNotExist(err) {
 		data, err := meta.MarshalToJson(obj, gv)
@@ -587,13 +598,15 @@ func updateOutputField(resPath, outputFile, moduleName string, gv schema.GroupVe
 	if err != nil {
 		return err
 	}
-
+	fmt.Println("output value after terraformOutput: ............................")
+	fmt.Println(value)
 	outputs := make(map[string]output)
 
 	err = json.Unmarshal([]byte(value), &outputs)
 	if err != nil {
 		return err
 	}
+	cnt := false
 
 	for name, output := range outputs {
 		val, err := output.ValueRaw.MarshalJSON()
@@ -605,7 +618,13 @@ func updateOutputField(resPath, outputFile, moduleName string, gv schema.GroupVe
 		if err != nil {
 			return err
 		}
+		cnt = true
 	}
-
+	if cnt {
+		fmt.Println("output is set")
+		if err := rClient.Update(ctx, obj); err != nil {
+			return err
+		}
+	}
 	return nil
 }
