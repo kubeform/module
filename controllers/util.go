@@ -75,16 +75,20 @@ func StartProcess(rClient client.Client, ctx context.Context, gv schema.GroupVer
 func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersion, obj *unstructured.Unstructured) error {
 	providerName, found, err := unstructured.NestedString(obj.Object, "spec", "providerName")
 	if err != nil {
+		fmt.Println("100")
 		return err
 	}
 	if !found {
+		fmt.Println("101")
 		return fmt.Errorf("providerName is not found")
 	}
 	providerSource, found, err := unstructured.NestedString(obj.Object, "spec", "providerSource")
 	if err != nil {
+		fmt.Println("102")
 		return err
 	}
 	if !found {
+		fmt.Println("103")
 		return fmt.Errorf("providerSource is not found")
 	}
 
@@ -95,6 +99,7 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 		return err
 	}
 	if !found {
+		fmt.Println("104")
 		return fmt.Errorf("moduleDef is not found")
 	}
 
@@ -114,16 +119,19 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 		if obj.GetDeletionTimestamp() != nil {
 			err := updateStatus(rClient, ctx, obj, status.TerminatingStatus)
 			if err != nil {
+				fmt.Println("105")
 				return err
 			}
 
 			err = terraformDestroy(resPath)
 			if err != nil {
+				fmt.Println("106")
 				return err
 			}
 
 			err = deleteFiles(resPath)
 			if err != nil {
+				fmt.Println("107")
 				return err
 			}
 
@@ -132,43 +140,56 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 	} else {
 		err := addFinalizer(ctx, rClient, obj, KFCFinalizer)
 		if err != nil {
+			fmt.Println("108")
 			return err
 		}
 	}
 	fmt.Println("oka let's start")
 	err = createFiles(resPath, mainFile)
 	if err != nil {
+		fmt.Println("109")
 		return err
 	}
 	fmt.Println("before mainTFJson")
 	mainTfJson, err := mainTFJson(rClient, ctx, moduleDef, providerName, providerSource, moduleName, obj)
-	err = ioutil.WriteFile(mainFile, mainTfJson, 0777)
 	if err != nil {
+		fmt.Println("110")
 		return err
 	}
+	err = ioutil.WriteFile(mainFile, mainTfJson, 0777)
+	if err != nil {
+		fmt.Println("111")
+		return err
+	}
+	err = generateOutputTFFile(outputFile, moduleName, gv, obj)
 	fmt.Println("before terraformInit")
 	err = terraformInit(resPath)
 	if err != nil {
+		fmt.Println("112")
 		return err
 	}
 	fmt.Println("before createTFStteFile")
 	err = createTFStateFile(stateFile, gv, obj)
 	if err != nil {
+		fmt.Println("113")
 		return err
 	}
 	fmt.Println("before terraformApply")
 	err = terraformApply(resPath)
 	if err != nil {
+		fmt.Println("114")
 		return err
 	}
 	fmt.Println("before updateTFStateFile")
 	err = updateTFStateFile(rClient, ctx, stateFile, gv, obj)
 	if err != nil {
+		fmt.Println("115")
 		return err
 	}
 	fmt.Println("before updateOutputField")
-	err = updateOutputField(rClient, ctx, resPath, moduleName, outputFile, gv, obj)
+	err = updateOutputField(rClient, ctx, resPath, obj)
 	if err != nil {
+		fmt.Println("116")
 		return err
 	}
 
@@ -179,9 +200,11 @@ func mainTFJson(rClient client.Client, ctx context.Context, source, providerName
 	spew.Dump(obj.Object)
 	input, found, err := unstructured.NestedMap(obj.Object, "spec", "resource", "input")
 	if err != nil {
+		fmt.Println("117")
 		return nil, err
 	}
 	if !found {
+		fmt.Println("118")
 		return nil, fmt.Errorf("no input is found")
 	}
 
@@ -198,6 +221,7 @@ func mainTFJson(rClient client.Client, ctx context.Context, source, providerName
 	fmt.Println("after prinint pure input")
 	jsnInput, err := json.Marshal(pureInput)
 	if err != nil {
+		fmt.Println("119")
 		return nil, err
 	}
 
@@ -214,9 +238,11 @@ func mainTFJson(rClient client.Client, ctx context.Context, source, providerName
 
 	providerRef, found, err := unstructured.NestedString(obj.Object, "spec", "providerRef", "name")
 	if err != nil {
+		fmt.Println("120")
 		return nil, err
 	}
 	if !found {
+		fmt.Println("121")
 		return nil, fmt.Errorf("providerRef is not found")
 	}
 	var secret corev1.Secret
@@ -225,6 +251,7 @@ func mainTFJson(rClient client.Client, ctx context.Context, source, providerName
 		Name:      providerRef,
 	}
 	if err := rClient.Get(ctx, request, &secret); err != nil {
+		fmt.Println("122")
 		return nil, err
 	}
 
@@ -239,6 +266,7 @@ func mainTFJson(rClient client.Client, ctx context.Context, source, providerName
 	moduleData = append(moduleData, []byte("}")...)
 	prettyData, err := prettyJSON(moduleData)
 	if err != nil {
+		fmt.Println("123")
 		return nil, err
 	}
 
@@ -465,35 +493,52 @@ func createTFStateFile(filePath string, gv schema.GroupVersion, obj *unstructure
 func updateTFStateFile(rClient client.Client, ctx context.Context, filePath string, gv schema.GroupVersion, obj *unstructured.Unstructured) error {
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
+		fmt.Println("12127")
 		return err
 	}
 
 	jsonData, err := meta.MarshalToJson(obj, gv)
 	if err != nil {
+		fmt.Println("12128")
 		return err
 	}
 	typedObj, err := meta.UnmarshalFromJSON(jsonData, gv)
 	if err != nil {
+		fmt.Println("12129")
 		return err
 	}
 
 	typedStruct := structs.New(typedObj)
 	stateValue := typedStruct.Field("Spec").Field("State").Value()
-
-	if stateValue.(string) == "" || !reflect.DeepEqual([]byte(stateValue.(string)), data) {
+	if stateValue.(string) == "" {
+		return nil
+	}
+	fmt.Println("stateValue: ")
+	fmt.Println(stateValue)
+	decodedStateValue, err := decodeState(stateValue.(string))
+	if err != nil {
+		fmt.Println("12130")
+		return err
+	}
+	fmt.Println("decodedStateValue: ")
+	fmt.Println(string(decodedStateValue))
+	if string(decodedStateValue) == "" || !reflect.DeepEqual(decodedStateValue, data) {
 		fmt.Println("let's see the unprocessed data .......................")
 		fmt.Println(data)
 		processedData, err := encodeState(data)
 		if err != nil {
+			fmt.Println("12131")
 			return err
 		}
 		fmt.Println("let's see the processed data ..........................: ")
 		fmt.Println(processedData)
 		err = unstructured.SetNestedField(obj.Object, processedData, "spec", "state")
 		if err != nil {
+			fmt.Println("12132")
 			return fmt.Errorf("failed to update spec state : %s", err)
 		}
 		if err := rClient.Update(ctx, obj); err != nil {
+			fmt.Println("12133")
 			return err
 		}
 	}
@@ -505,12 +550,14 @@ func decodeState(data string) ([]byte, error) {
 
 	savedKeyKeeper, err := secrets.OpenKeeper(context.Background(), "base64key://"+SecretKey)
 	if err != nil {
+		fmt.Println("12122")
 		return nil, err
 	}
 	defer savedKeyKeeper.Close()
 
 	plainText, err := savedKeyKeeper.Decrypt(context.Background(), cipherText)
 	if err != nil {
+		fmt.Println("12123")
 		return nil, err
 	}
 
@@ -518,15 +565,18 @@ func decodeState(data string) ([]byte, error) {
 
 	zr, err := gzip.NewReader(buf)
 	if err != nil {
+		fmt.Println("12124")
 		return nil, err
 	}
 
 	result, err := ioutil.ReadAll(zr)
 	if err != nil {
+		fmt.Println("12125")
 		return nil, err
 	}
 
 	if err := zr.Close(); err != nil {
+		fmt.Println("12126")
 		return nil, err
 	}
 
@@ -563,37 +613,52 @@ func encodeState(data []byte) (string, error) {
 	return base91.EncodeToString(cipherText), nil
 }
 
-func updateOutputField(rClient client.Client, ctx context.Context, resPath, outputFile, moduleName string, gv schema.GroupVersion, obj *unstructured.Unstructured) error {
+func generateOutputTFFile(outputFile, moduleName string, gv schema.GroupVersion, obj *unstructured.Unstructured) error {
+	fmt.Println("in generateOutputTFFile")
 	_, err := os.Stat(outputFile)
 	if os.IsNotExist(err) {
-		data, err := meta.MarshalToJson(obj, gv)
-		if err != nil {
-			return err
-		}
+		//data, err := meta.MarshalToJson(obj, gv)
+		//if err != nil {
+		//	return err
+		//}
 
-		typedObj, err := meta.UnmarshalFromJSON(data, gv)
-		if err != nil {
-			return err
-		}
+		//typedObj, err := meta.UnmarshalFromJSON(data, gv)
+		//if err != nil {
+		//	return err
+		//}
 
-		typedStruct := structs.New(typedObj)
+		//typedStruct := structs.New(typedObj)
 		outputData := []byte(``)
-		output := reflect.TypeOf(typedStruct.Field("Spec").Field("Resource").Field("Output").Value()).Elem()
-
-		for i := 0; i < output.NumField(); i++ {
-			field := output.Field(i).Tag.Get("tf")
+		//output := reflect.TypeOf(typedStruct.Field("Spec").Field("Resource").Field("Output").Value()).Elem()
+		outputNames := []string{
+			"s3_bucket_id",
+			"s3_bucket_arn",
+			"s3_bucket_bucket_domain_name",
+			"s3_bucket_region",
+		}
+		//for i := 0; i < len(outputNames); i++ {
+		for _, val := range outputNames {
+			//field := output.Field(i).Tag.Get("tf")
+			field := val
 			outputData = append(outputData, []byte(`output "`+field+`" {
 	value = module.`+moduleName+`.`+field+`
 	}
 	`)...)
 		}
-
+		fmt.Println("outputData: ")
+		fmt.Println(string(outputData))
 		err = ioutil.WriteFile(outputFile, outputData, 0644)
 		if err != nil {
 			return err
 		}
+
+		return nil
 	}
 
+	return err
+}
+
+func updateOutputField(rClient client.Client, ctx context.Context, resPath string, obj *unstructured.Unstructured) error {
 	value, err := terraformOutput(resPath)
 	if err != nil {
 		return err
