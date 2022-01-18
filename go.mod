@@ -6,12 +6,13 @@ require (
 	ekyu.moe/base91 v0.2.3
 	github.com/davecgh/go-spew v1.1.1
 	github.com/fatih/structs v1.1.0
-	github.com/form3tech-oss/jwt-go v3.2.2+incompatible // indirect
 	github.com/go-logr/logr v0.4.0
 	github.com/gobuffalo/flect v0.2.4
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.15.0
+	github.com/spf13/cobra v1.3.0 // indirect
 	gocloud.dev v0.24.0
+	golang.org/x/crypto v0.0.0-20211108221036-ceb1ce70b4fa // indirect
 	k8s.io/api v0.22.1
 	k8s.io/apiextensions-apiserver v0.22.1
 	k8s.io/apimachinery v0.22.1
@@ -19,7 +20,6 @@ require (
 	k8s.io/klog/v2 v2.9.0
 	kmodules.xyz/client-go v0.0.0-20211023080224-88313b8deed7
 	kmodules.xyz/resource-validator v0.0.0-20211025154137-6a5a20ec7581
-	kubeform.dev/cli v0.1.1-0.20220117121651-e641b51137dd
 	sigs.k8s.io/cli-utils v0.26.1
 	sigs.k8s.io/controller-runtime v0.10.0
 )
@@ -28,18 +28,6 @@ require (
 replace github.com/json-iterator/go => github.com/gomodules/json-iterator v1.1.12-0.20210506053207-2a3ea71074bc
 
 replace bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d
-
-replace cloud.google.com/go => cloud.google.com/go v0.54.0
-
-replace cloud.google.com/go/bigquery => cloud.google.com/go/bigquery v1.4.0
-
-replace cloud.google.com/go/datastore => cloud.google.com/go/datastore v1.1.0
-
-replace cloud.google.com/go/firestore => cloud.google.com/go/firestore v1.1.0
-
-replace cloud.google.com/go/pubsub => cloud.google.com/go/pubsub v1.2.0
-
-replace cloud.google.com/go/storage => cloud.google.com/go/storage v1.6.0
 
 replace github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
 
@@ -80,10 +68,6 @@ replace github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring =
 //replace github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.10.0
 
 replace go.etcd.io/etcd => go.etcd.io/etcd v0.5.0-alpha.5.0.20200910180754-dd1b699fc489
-
-replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20201110150050-8816d57aaa9a
-
-replace google.golang.org/grpc => google.golang.org/grpc v1.27.1
 
 replace helm.sh/helm/v3 => github.com/kubepack/helm/v3 v3.1.0-rc.1.0.20210503022716-7e2d4913a125
 
