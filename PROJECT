@@ -13,4 +13,13 @@ resources:
   kind: Module
   path: github.com/shahincsejnu/module-controller/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: kubeform.com
+  group: tf
+  kind: ModuleDefinition
+  path: github.com/shahincsejnu/module-controller/api/v1alpha1
+  version: v1alpha1
 version: "3"

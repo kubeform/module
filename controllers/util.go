@@ -26,15 +26,18 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/fatih/structs"
 	"github.com/gobuffalo/flect"
+	"github.com/shahincsejnu/module-controller/api/v1alpha1"
 	"gocloud.dev/secrets"
 	_ "gocloud.dev/secrets/localsecrets"
 	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	"kmodules.xyz/client-go/meta"
+	resourcevalidator "kmodules.xyz/resource-validator"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -73,40 +76,48 @@ func StartProcess(rClient client.Client, ctx context.Context, gv schema.GroupVer
 }
 
 func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersion, obj *unstructured.Unstructured) error {
-	providerName, found, err := unstructured.NestedString(obj.Object, "spec", "providerName")
+	moduleDefName, found, err := unstructured.NestedString(obj.Object, "spec", "moduleDef", "name")
 	if err != nil {
-		fmt.Println("100")
 		return err
 	}
 	if !found {
-		fmt.Println("101")
-		return fmt.Errorf("providerName is not found")
-	}
-	providerSource, found, err := unstructured.NestedString(obj.Object, "spec", "providerSource")
-	if err != nil {
-		fmt.Println("102")
-		return err
-	}
-	if !found {
-		fmt.Println("103")
-		return fmt.Errorf("providerSource is not found")
+		return fmt.Errorf("moduleDefName is not found")
 	}
 
-	// let's suppose moduleDef is the module source for now, in future would do it from ModuleDefinition
-	moduleDef, found, err := unstructured.NestedString(obj.Object, "spec", "moduleDef", "name")
+	moduleObj := v1alpha1.ModuleDefinition{}
+	reqNamespacedName := types.NamespacedName{
+		//Namespace: moduleDefNamespace,
+		Name: moduleDefName,
+	}
+
+	if err := rClient.Get(ctx, reqNamespacedName, &moduleObj); err != nil {
+		return fmt.Errorf(err.Error(), "unable to fetch ModuleDefinition")
+	}
+
+	jsonSchemaProps := moduleObj.Spec.Schema.Properties["input"]
+	openapiV3Schema := &v1.CustomResourceValidation{
+		OpenAPIV3Schema: &jsonSchemaProps,
+	}
+
+	input, found, err := unstructured.NestedMap(obj.Object, "spec", "resource", "input")
 	if err != nil {
-		fmt.Println("4")
 		return err
 	}
 	if !found {
-		fmt.Println("104")
-		return fmt.Errorf("moduleDef is not found")
+		return fmt.Errorf("no input is found")
 	}
 
-	// TODO: validation part
-	// when we will have module def created then we can use this
-	// demo of validation is done before in the tf-module-support-in-kf repo
-	// now as we supposed moduleDef is the module source for now, so just ignore this validation part for now
+	validator, err := resourcevalidator.New(false, schema.GroupVersionKind{}, openapiV3Schema)
+
+	tempObj := &unstructured.Unstructured{
+		Object: input,
+	}
+
+	errList := validator.Validate(context.TODO(), tempObj)
+	if len(errList) > 0 {
+		fmt.Println(errList.ToAggregate().Error())
+		return errList.ToAggregate()
+	}
 
 	namespace := obj.GetNamespace()
 	moduleName := obj.GetName()
@@ -151,7 +162,11 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 		return err
 	}
 	fmt.Println("before mainTFJson")
-	mainTfJson, err := mainTFJson(rClient, ctx, moduleDef, providerName, providerSource, moduleName, obj)
+	source := moduleObj.Spec.ModuleRef.TfMarketplace
+	providerName := moduleObj.Spec.Provider.Name
+	providerSource := moduleObj.Spec.Provider.Source
+
+	mainTfJson, err := mainTFJson(rClient, ctx, source, providerName, providerSource, moduleName, obj)
 	if err != nil {
 		fmt.Println("110")
 		return err

@@ -1,0 +1,6 @@
+apiVersion: tf.kubeform.com/v1alpha1
+kind: ModuleDefinition
+metadata:
+  name: moduledefinition-sample
+spec:
+  # TODO(user): Add fields here

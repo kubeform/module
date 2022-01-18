@@ -18,9 +18,10 @@ package main
 
 import (
 	"flag"
+	"os"
+
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
-	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -30,6 +31,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/klog/v2/klogr"
 	ctrl "sigs.k8s.io/controller-runtime"
+
 	//"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	tfv1alpha1 "github.com/shahincsejnu/module-controller/api/v1alpha1"
@@ -88,6 +90,13 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(ctx, mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Module")
+		os.Exit(1)
+	}
+	if err = (&controllers.ModuleDefinitionReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ModuleDefinition")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

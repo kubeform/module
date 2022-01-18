@@ -6,16 +6,20 @@ require (
 	ekyu.moe/base91 v0.2.3
 	github.com/davecgh/go-spew v1.1.1
 	github.com/fatih/structs v1.1.0
+	github.com/form3tech-oss/jwt-go v3.2.2+incompatible // indirect
 	github.com/go-logr/logr v0.4.0
 	github.com/gobuffalo/flect v0.2.4
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.15.0
 	gocloud.dev v0.24.0
 	k8s.io/api v0.22.1
+	k8s.io/apiextensions-apiserver v0.22.1
 	k8s.io/apimachinery v0.22.1
 	k8s.io/client-go v0.22.1
 	k8s.io/klog/v2 v2.9.0
-	kmodules.xyz/client-go v0.0.0-20210822203828-5e9cebbf1dfa
+	kmodules.xyz/client-go v0.0.0-20211023080224-88313b8deed7
+	kmodules.xyz/resource-validator v0.0.0-20211025154137-6a5a20ec7581
+	kubeform.dev/cli v0.1.1-0.20220117121651-e641b51137dd
 	sigs.k8s.io/cli-utils v0.26.1
 	sigs.k8s.io/controller-runtime v0.10.0
 )
@@ -102,3 +106,9 @@ replace k8s.io/kubernetes => github.com/kmodules/kubernetes v1.22.0-alpha.0.0.20
 replace k8s.io/utils => k8s.io/utils v0.0.0-20201110183641-67b214c5f920
 
 replace sigs.k8s.io/application => github.com/kmodules/application v0.8.4-0.20210427030912-90eeee3bc4ad
+
+replace github.com/dgrijalva/jwt-go => github.com/gomodules/jwt v3.2.2+incompatible
+
+replace github.com/golang-jwt/jwt => github.com/golang-jwt/jwt v3.2.2+incompatible
+
+replace github.com/form3tech-oss/jwt-go => github.com/form3tech-oss/jwt-go v3.2.5+incompatible

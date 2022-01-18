@@ -9,6 +9,32 @@ rules:
 - apiGroups:
   - tf.kubeform.com
   resources:
+  - moduledefinitions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - tf.kubeform.com
+  resources:
+  - moduledefinitions/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - tf.kubeform.com
+  resources:
+  - moduledefinitions/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - tf.kubeform.com
+  resources:
   - modules
   verbs:
   - create
