@@ -22,7 +22,7 @@ import (
 )
 
 type ModuleRef struct {
-	TfMarketplace string
+	TfMarketplace string `json:"tfMarketplace"`
 }
 
 type Provider struct {

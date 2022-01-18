@@ -1,4 +1,4 @@
-module github.com/shahincsejnu/module-controller
+module kubeform.dev/module
 
 go 1.16
 

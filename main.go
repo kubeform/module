@@ -34,8 +34,8 @@ import (
 
 	//"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	tfv1alpha1 "github.com/shahincsejnu/module-controller/api/v1alpha1"
-	"github.com/shahincsejnu/module-controller/controllers"
+	tfv1alpha1 "kubeform.dev/module/api/v1alpha1"
+	"kubeform.dev/module/controllers"
 	//+kubebuilder:scaffold:imports
 )
 

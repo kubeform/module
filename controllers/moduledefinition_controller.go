@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	tfv1alpha1 "github.com/shahincsejnu/module-controller/api/v1alpha1"
+	tfv1alpha1 "kubeform.dev/module/api/v1alpha1"
 )
 
 // ModuleDefinitionReconciler reconciles a ModuleDefinition object
