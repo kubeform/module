@@ -98,7 +98,8 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 	openapiV3Schema := &v1.CustomResourceValidation{
 		OpenAPIV3Schema: &jsonSchemaProps,
 	}
-
+	fmt.Println("printing jsonSchemaProps of input")
+	spew.Dump(jsonSchemaProps)
 	input, found, err := unstructured.NestedMap(obj.Object, "spec", "resource", "input")
 	if err != nil {
 		return err
@@ -106,19 +107,21 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 	if !found {
 		return fmt.Errorf("no input is found")
 	}
-
+	fmt.Println("prining spec.resource.input of Module")
+	spew.Dump(input)
 	validator, err := resourcevalidator.New(false, schema.GroupVersionKind{}, openapiV3Schema)
 
 	tempObj := &unstructured.Unstructured{
 		Object: input,
 	}
-
+	fmt.Println("printing tempObj")
+	spew.Dump(tempObj)
 	errList := validator.Validate(context.TODO(), tempObj)
 	if len(errList) > 0 {
 		fmt.Println(errList.ToAggregate().Error())
 		return errList.ToAggregate()
 	}
-
+	fmt.Println("validation complete")
 	namespace := obj.GetNamespace()
 	moduleName := obj.GetName()
 	resPath := filepath.Join(basePath, "modules"+"."+namespace+"."+moduleName)

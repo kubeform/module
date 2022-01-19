@@ -12,7 +12,7 @@ spec:
     listKind: ModuleDefinitionList
     plural: moduledefinitions
     singular: moduledefinition
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1alpha1
     schema:
@@ -38,8 +38,6 @@ spec:
                 properties:
                   tfMarketplace:
                     type: string
-                required:
-                - tfMarketplace
                 type: object
               provider:
                 properties:

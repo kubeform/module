@@ -22,7 +22,7 @@ import (
 )
 
 type ModuleRef struct {
-	TfMarketplace string `json:"tfMarketplace"`
+	TfMarketplace string `json:"tfMarketplace,omitempty"`
 }
 
 type Provider struct {
@@ -43,6 +43,7 @@ type ModuleDefinitionStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:scope=Cluster
 
 // ModuleDefinition is the Schema for the moduledefinitions API
 type ModuleDefinition struct {
