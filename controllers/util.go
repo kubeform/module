@@ -76,18 +76,18 @@ func StartProcess(rClient client.Client, ctx context.Context, gv schema.GroupVer
 }
 
 func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersion, obj *unstructured.Unstructured) error {
-	moduleDefName, found, err := unstructured.NestedString(obj.Object, "spec", "moduleDef", "name")
+	moduleDef, found, err := unstructured.NestedString(obj.Object, "spec", "moduleDef")
 	if err != nil {
 		return err
 	}
 	if !found {
-		return fmt.Errorf("moduleDefName is not found")
+		return fmt.Errorf("moduleDef is not found")
 	}
 
 	moduleObj := v1alpha1.ModuleDefinition{}
 	reqNamespacedName := types.NamespacedName{
 		//Namespace: moduleDefNamespace,
-		Name: moduleDefName,
+		Name: moduleDef,
 	}
 
 	if err := rClient.Get(ctx, reqNamespacedName, &moduleObj); err != nil {
@@ -114,6 +114,7 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 	tempObj := &unstructured.Unstructured{
 		Object: input,
 	}
+	unstructured.SetNestedField(tempObj.Object, "temp-obj", "metadata", "name")
 	fmt.Println("printing tempObj")
 	spew.Dump(tempObj)
 	errList := validator.Validate(context.TODO(), tempObj)
@@ -528,25 +529,34 @@ func updateTFStateFile(rClient client.Client, ctx context.Context, filePath stri
 
 	typedStruct := structs.New(typedObj)
 	stateValue := typedStruct.Field("Spec").Field("State").Value()
-	if stateValue.(string) == "" {
-		return nil
+	var decStateValue []byte
+	if stateValue.(string) != "" {
+		fmt.Println("before decoding statevalue: ")
+		fmt.Println(stateValue.(string))
+		decodedStateValue, err := decodeState(stateValue.(string))
+		if err != nil {
+			return err
+		}
+		decStateValue = decodedStateValue
 	}
-	fmt.Println("stateValue: ")
-	fmt.Println(stateValue)
-	decodedStateValue, err := decodeState(stateValue.(string))
-	if err != nil {
-		fmt.Println("12130")
-		return err
-	}
-	fmt.Println("decodedStateValue: ")
-	fmt.Println(string(decodedStateValue))
-	if string(decodedStateValue) == "" || !reflect.DeepEqual(decodedStateValue, data) {
+
+	if string(decStateValue) == "" || !reflect.DeepEqual(decStateValue, data) {
 		fmt.Println("let's see the unprocessed data .......................")
 		fmt.Println(data)
 		processedData, err := encodeState(data)
 		if err != nil {
 			fmt.Println("12131")
 			return err
+		}
+		decProcessData, err := decodeState(processedData)
+		if err != nil {
+			fmt.Println("decoding is problem")
+			return err
+		}
+		fmt.Println("after encoding & decoding: ")
+		fmt.Println(string(decProcessData))
+		if string(decProcessData) != string(data) {
+			fmt.Println("something is wrong in decoding......")
 		}
 		fmt.Println("let's see the processed data ..........................: ")
 		fmt.Println(processedData)
@@ -565,7 +575,7 @@ func updateTFStateFile(rClient client.Client, ctx context.Context, filePath stri
 
 func decodeState(data string) ([]byte, error) {
 	cipherText := base91.DecodeString(data)
-
+	SecretKey = "YXBwc2NvZGVrdWJlZm9ybXNlY3JldGtleWFhYWFhYQo="
 	savedKeyKeeper, err := secrets.OpenKeeper(context.Background(), "base64key://"+SecretKey)
 	if err != nil {
 		fmt.Println("12122")
@@ -615,6 +625,7 @@ func encodeState(data []byte) (string, error) {
 	}
 
 	// encrypt
+	SecretKey = "YXBwc2NvZGVrdWJlZm9ybXNlY3JldGtleWFhYWFhYQo="
 	savedKeyKeeper, err := secrets.OpenKeeper(context.Background(), "base64key://"+SecretKey)
 	if err != nil {
 		return "", err
