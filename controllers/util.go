@@ -84,17 +84,17 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 		return fmt.Errorf("moduleDef is not found")
 	}
 
-	moduleObj := v1alpha1.ModuleDefinition{}
+	moduleDefObj := v1alpha1.ModuleDefinition{}
 	reqNamespacedName := types.NamespacedName{
 		//Namespace: moduleDefNamespace,
 		Name: moduleDef,
 	}
 
-	if err := rClient.Get(ctx, reqNamespacedName, &moduleObj); err != nil {
+	if err := rClient.Get(ctx, reqNamespacedName, &moduleDefObj); err != nil {
 		return fmt.Errorf(err.Error(), "unable to fetch ModuleDefinition")
 	}
 
-	jsonSchemaProps := moduleObj.Spec.Schema.Properties["input"]
+	jsonSchemaProps := moduleDefObj.Spec.Schema.Properties["input"]
 	openapiV3Schema := &v1.CustomResourceValidation{
 		OpenAPIV3Schema: &jsonSchemaProps,
 	}
@@ -166,9 +166,9 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 		return err
 	}
 	fmt.Println("before mainTFJson")
-	source := moduleObj.Spec.ModuleRef.TfMarketplace
-	providerName := moduleObj.Spec.Provider.Name
-	providerSource := moduleObj.Spec.Provider.Source
+	source := moduleDefObj.Spec.ModuleRef.TfMarketplace
+	providerName := moduleDefObj.Spec.Provider.Name
+	providerSource := moduleDefObj.Spec.Provider.Source
 
 	mainTfJson, err := mainTFJson(rClient, ctx, source, providerName, providerSource, moduleName, obj)
 	if err != nil {
@@ -180,7 +180,9 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 		fmt.Println("111")
 		return err
 	}
-	err = generateOutputTFFile(outputFile, moduleName, gv, obj)
+
+	jsnSchemaPropsForOutput := moduleDefObj.Spec.Schema.Properties["output"]
+	err = generateOutputTFFile(outputFile, moduleName, jsnSchemaPropsForOutput)
 	fmt.Println("before terraformInit")
 	err = terraformInit(resPath)
 	if err != nil {
@@ -542,7 +544,7 @@ func updateTFStateFile(rClient client.Client, ctx context.Context, filePath stri
 
 	if string(decStateValue) == "" || !reflect.DeepEqual(decStateValue, data) {
 		fmt.Println("let's see the unprocessed data .......................")
-		fmt.Println(data)
+		fmt.Println(string(data))
 		processedData, err := encodeState(data)
 		if err != nil {
 			fmt.Println("12131")
@@ -642,35 +644,19 @@ func encodeState(data []byte) (string, error) {
 	return base91.EncodeToString(cipherText), nil
 }
 
-func generateOutputTFFile(outputFile, moduleName string, gv schema.GroupVersion, obj *unstructured.Unstructured) error {
+func generateOutputTFFile(outputFile, moduleName string, outputJsonSchemaProps v1.JSONSchemaProps) error {
 	fmt.Println("in generateOutputTFFile")
 	_, err := os.Stat(outputFile)
 	if os.IsNotExist(err) {
-		//data, err := meta.MarshalToJson(obj, gv)
-		//if err != nil {
-		//	return err
-		//}
-
-		//typedObj, err := meta.UnmarshalFromJSON(data, gv)
-		//if err != nil {
-		//	return err
-		//}
-
-		//typedStruct := structs.New(typedObj)
 		outputData := []byte(``)
-		//output := reflect.TypeOf(typedStruct.Field("Spec").Field("Resource").Field("Output").Value()).Elem()
-		outputNames := []string{
-			"s3_bucket_id",
-			"s3_bucket_arn",
-			"s3_bucket_bucket_domain_name",
-			"s3_bucket_region",
+		outputNames := []string{}
+		for key, _ := range outputJsonSchemaProps.Properties {
+			outputNames = append(outputNames, key)
 		}
-		//for i := 0; i < len(outputNames); i++ {
+
 		for _, val := range outputNames {
-			//field := output.Field(i).Tag.Get("tf")
-			field := val
-			outputData = append(outputData, []byte(`output "`+field+`" {
-	value = module.`+moduleName+`.`+field+`
+			outputData = append(outputData, []byte(`output "`+val+`" {
+	value = module.`+moduleName+`.`+val+`
 	}
 	`)...)
 		}
@@ -703,12 +689,7 @@ func updateOutputField(rClient client.Client, ctx context.Context, resPath strin
 	cnt := false
 
 	for name, output := range outputs {
-		val, err := output.ValueRaw.MarshalJSON()
-		if err != nil {
-			return err
-		}
-
-		err = setNestedFieldNoCopy(obj.Object, string(val), "spec", "resource", "output", flect.Camelize(name))
+		err = setNestedFieldNoCopy(obj.Object, output.ValueRaw, "spec", "resource", "output", flect.Camelize(name))
 		if err != nil {
 			return err
 		}
