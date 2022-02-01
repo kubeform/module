@@ -36,8 +36,15 @@ spec:
             properties:
               moduleRef:
                 properties:
-                  tfMarketplace:
-                    type: string
+                  git:
+                    properties:
+                      ref:
+                        type: string
+                      sshKey:
+                        type: string
+                    required:
+                    - ref
+                    type: object
                 type: object
               provider:
                 properties:

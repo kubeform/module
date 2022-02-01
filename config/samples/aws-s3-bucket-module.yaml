@@ -7,6 +7,6 @@ spec:
     input:
       bucket: "kubeform-module"
       forceDestroy: true
-  moduleDef: demo-module-def
+  moduleDef: module-def
   providerRef:
     name: aws-credentials

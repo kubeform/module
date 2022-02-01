@@ -24,6 +24,8 @@ import (
 type Git struct {
 	Ref    string `json:"ref"`
 	SshKey string `json:"sshKey,omitempty"`
+	//username
+	//password
 }
 
 type ModuleRef struct {
