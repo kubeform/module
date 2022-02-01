@@ -21,8 +21,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type Git struct {
+	Ref    string `json:"ref"`
+	SshKey string `json:"sshKey,omitempty"`
+}
+
 type ModuleRef struct {
-	TfMarketplace string `json:"tfMarketplace,omitempty"`
+	Git Git `json:"git,omitempty"`
 }
 
 type Provider struct {

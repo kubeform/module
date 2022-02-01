@@ -42,9 +42,10 @@ var (
 // ModuleReconciler reconciles a Module object
 type ModuleReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Gvk    schema.GroupVersionKind
-	Scheme *runtime.Scheme
+	Log       logr.Logger
+	Gvk       schema.GroupVersionKind
+	SecretKey string
+	Scheme    *runtime.Scheme
 }
 
 //+kubebuilder:rbac:groups=tf.kubeform.com,resources=modules,verbs=get;list;watch;create;update;patch;delete
@@ -69,8 +70,9 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	rClient := r.Client
+	secretKey := r.SecretKey
 	fmt.Println("before StartProcess")
-	return ctrl.Result{}, StartProcess(rClient, ctx, gvk.GroupVersion(), &obj)
+	return ctrl.Result{}, StartProcess(rClient, ctx, gvk.GroupVersion(), &obj, secretKey)
 }
 
 // SetupWithManager sets up the controller with the Manager.

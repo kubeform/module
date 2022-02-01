@@ -53,11 +53,13 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	var secretKey string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.StringVar(&secretKey, "secret-key", "YXBwc2NvZGVrdWJlZm9ybXNlY3JldGtleWFhYWFhYQo=", "The base64 encoded secret key to use during encode and decode tfstate")
 	flag.Parse()
 
 	klog.Infoln("Starting module controller...")
@@ -85,7 +87,8 @@ func main() {
 			Version: "v1alpha1",
 			Kind:    "Module",
 		},
-		Scheme: mgr.GetScheme(),
+		SecretKey: secretKey,
+		Scheme:    mgr.GetScheme(),
 	}).SetupWithManager(ctx, mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Module")
 		os.Exit(1)

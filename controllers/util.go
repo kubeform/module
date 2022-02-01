@@ -26,6 +26,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/fatih/structs"
 	"github.com/gobuffalo/flect"
+	"github.com/hashicorp/go-getter"
 	"gocloud.dev/secrets"
 	_ "gocloud.dev/secrets/localsecrets"
 	"io/ioutil"
@@ -46,16 +47,14 @@ import (
 	"strings"
 )
 
-var SecretKey string
-
-func StartProcess(rClient client.Client, ctx context.Context, gv schema.GroupVersion, obj *unstructured.Unstructured) error {
+func StartProcess(rClient client.Client, ctx context.Context, gv schema.GroupVersion, obj *unstructured.Unstructured, secretKey string) error {
 	err := initialUpdateStatus(rClient, ctx, gv, obj, nil, true)
 	if err != nil {
 		fmt.Println("1")
 		return err
 	}
 
-	err = reconcile(rClient, ctx, gv, obj)
+	err = reconcile(rClient, ctx, gv, obj, secretKey)
 	if err != nil {
 		err2 := initialUpdateStatus(rClient, ctx, gv, obj, err, false)
 		if err2 != nil {
@@ -75,7 +74,7 @@ func StartProcess(rClient client.Client, ctx context.Context, gv schema.GroupVer
 	return nil
 }
 
-func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersion, obj *unstructured.Unstructured) error {
+func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersion, obj *unstructured.Unstructured, secretKey string) error {
 	moduleDef, found, err := unstructured.NestedString(obj.Object, "spec", "moduleDef")
 	if err != nil {
 		return err
@@ -166,11 +165,41 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 		return err
 	}
 	fmt.Println("before mainTFJson")
-	source := moduleDefObj.Spec.ModuleRef.TfMarketplace
+	source := moduleDefObj.Spec.ModuleRef.Git.Ref
+	sshKey := moduleDefObj.Spec.ModuleRef.Git.SshKey
 	providerName := moduleDefObj.Spec.Provider.Name
 	providerSource := moduleDefObj.Spec.Provider.Source
 
-	mainTfJson, err := mainTFJson(rClient, ctx, source, providerName, providerSource, moduleName, obj)
+	path := "/tmp/" + moduleName
+	src := source
+
+	if sshKey != "" {
+		src = "git::ssh://git@" + src + "?sshkey=" + sshKey
+	}
+
+	clnt := &getter.Client{
+		//define the destination to where the downloaded dir will be stored
+		Dst: path,
+		Dir: true,
+		Pwd: ".",
+		//the repository to clone
+		Src:  src,
+		Mode: getter.ClientModeDir,
+		//define the type of detectors go getter should use
+		Detectors: []getter.Detector{
+			&getter.GitHubDetector{},
+		},
+		//provide the getter needed to download the files
+		Getters: map[string]getter.Getter{
+			"git": &getter.GitGetter{},
+		},
+	}
+	//download the files
+	if err := clnt.Get(); err != nil {
+		return err
+	}
+
+	mainTfJson, err := mainTFJson(rClient, ctx, path, providerName, providerSource, moduleName, obj)
 	if err != nil {
 		fmt.Println("110")
 		return err
@@ -190,7 +219,7 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 		return err
 	}
 	fmt.Println("before createTFStteFile")
-	err = createTFStateFile(stateFile, gv, obj)
+	err = createTFStateFile(stateFile, gv, obj, secretKey)
 	if err != nil {
 		fmt.Println("113")
 		return err
@@ -202,7 +231,7 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 		return err
 	}
 	fmt.Println("before updateTFStateFile")
-	err = updateTFStateFile(rClient, ctx, stateFile, gv, obj)
+	err = updateTFStateFile(rClient, ctx, stateFile, gv, obj, secretKey)
 	if err != nil {
 		fmt.Println("115")
 		return err
@@ -483,7 +512,7 @@ func createFiles(resPath, mainFile string) error {
 	return nil
 }
 
-func createTFStateFile(filePath string, gv schema.GroupVersion, obj *unstructured.Unstructured) error {
+func createTFStateFile(filePath string, gv schema.GroupVersion, obj *unstructured.Unstructured, secretKey string) error {
 	data, err := meta.MarshalToJson(obj, gv)
 	if err != nil {
 		return err
@@ -497,7 +526,7 @@ func createTFStateFile(filePath string, gv schema.GroupVersion, obj *unstructure
 
 	_, existErr := os.Stat(filePath)
 	if os.IsNotExist(existErr) && stateValue.(string) != "" {
-		decodedData, err := decodeState(stateValue.(string))
+		decodedData, err := decodeState(stateValue.(string), secretKey)
 		if err != nil {
 			return err
 		}
@@ -511,7 +540,7 @@ func createTFStateFile(filePath string, gv schema.GroupVersion, obj *unstructure
 	return nil
 }
 
-func updateTFStateFile(rClient client.Client, ctx context.Context, filePath string, gv schema.GroupVersion, obj *unstructured.Unstructured) error {
+func updateTFStateFile(rClient client.Client, ctx context.Context, filePath string, gv schema.GroupVersion, obj *unstructured.Unstructured, secretKey string) error {
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		fmt.Println("12127")
@@ -535,7 +564,7 @@ func updateTFStateFile(rClient client.Client, ctx context.Context, filePath stri
 	if stateValue.(string) != "" {
 		fmt.Println("before decoding statevalue: ")
 		fmt.Println(stateValue.(string))
-		decodedStateValue, err := decodeState(stateValue.(string))
+		decodedStateValue, err := decodeState(stateValue.(string), secretKey)
 		if err != nil {
 			return err
 		}
@@ -545,12 +574,12 @@ func updateTFStateFile(rClient client.Client, ctx context.Context, filePath stri
 	if string(decStateValue) == "" || !reflect.DeepEqual(decStateValue, data) {
 		fmt.Println("let's see the unprocessed data .......................")
 		fmt.Println(string(data))
-		processedData, err := encodeState(data)
+		processedData, err := encodeState(data, secretKey)
 		if err != nil {
 			fmt.Println("12131")
 			return err
 		}
-		decProcessData, err := decodeState(processedData)
+		decProcessData, err := decodeState(processedData, secretKey)
 		if err != nil {
 			fmt.Println("decoding is problem")
 			return err
@@ -575,10 +604,10 @@ func updateTFStateFile(rClient client.Client, ctx context.Context, filePath stri
 	return nil
 }
 
-func decodeState(data string) ([]byte, error) {
+func decodeState(data, secretKey string) ([]byte, error) {
 	cipherText := base91.DecodeString(data)
-	SecretKey = "YXBwc2NvZGVrdWJlZm9ybXNlY3JldGtleWFhYWFhYQo="
-	savedKeyKeeper, err := secrets.OpenKeeper(context.Background(), "base64key://"+SecretKey)
+
+	savedKeyKeeper, err := secrets.OpenKeeper(context.Background(), "base64key://"+secretKey)
 	if err != nil {
 		fmt.Println("12122")
 		return nil, err
@@ -613,7 +642,7 @@ func decodeState(data string) ([]byte, error) {
 	return result, nil
 }
 
-func encodeState(data []byte) (string, error) {
+func encodeState(data []byte, secretKey string) (string, error) {
 	// zip
 	var buf bytes.Buffer
 	zw := gzip.NewWriter(&buf)
@@ -627,8 +656,7 @@ func encodeState(data []byte) (string, error) {
 	}
 
 	// encrypt
-	SecretKey = "YXBwc2NvZGVrdWJlZm9ybXNlY3JldGtleWFhYWFhYQo="
-	savedKeyKeeper, err := secrets.OpenKeeper(context.Background(), "base64key://"+SecretKey)
+	savedKeyKeeper, err := secrets.OpenKeeper(context.Background(), "base64key://"+secretKey)
 	if err != nil {
 		return "", err
 	}
