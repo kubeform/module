@@ -19,13 +19,12 @@ package v1alpha1
 import (
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apiv1 "kmodules.xyz/client-go/api/v1"
 )
 
 type Git struct {
-	Ref    string `json:"ref"`
-	SshKey string `json:"sshKey,omitempty"`
-	//username
-	//password
+	Ref  string                `json:"ref"`
+	Cred apiv1.ObjectReference `json:"cred,omitempty"`
 }
 
 type ModuleRef struct {

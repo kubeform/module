@@ -38,9 +38,20 @@ spec:
                 properties:
                   git:
                     properties:
+                      cred:
+                        description: ObjectReference contains enough information to
+                          let you inspect or modify the referred object.
+                        properties:
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            type: string
+                          namespace:
+                            description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                            type: string
+                        required:
+                        - name
+                        type: object
                       ref:
-                        type: string
-                      sshKey:
                         type: string
                     required:
                     - ref

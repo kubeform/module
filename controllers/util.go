@@ -21,6 +21,7 @@ import (
 	"compress/gzip"
 	"context"
 	"ekyu.moe/base91"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
@@ -166,7 +167,28 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 	}
 	fmt.Println("before mainTFJson")
 	source := moduleDefObj.Spec.ModuleRef.Git.Ref
-	sshKey := moduleDefObj.Spec.ModuleRef.Git.SshKey
+	sshKey := ""
+
+	credName := moduleDefObj.Spec.ModuleRef.Git.Cred.Name
+	credNamespace := moduleDefObj.Spec.ModuleRef.Git.Cred.Namespace
+
+	if credName != "" {
+		if credNamespace == "" {
+			credNamespace = "default"
+		}
+		credSecret := &corev1.Secret{}
+		reqNsName := types.NamespacedName{
+			Namespace: credNamespace,
+			Name:      credName,
+		}
+
+		if err := rClient.Get(ctx, reqNsName, credSecret); err != nil {
+			return err
+		}
+		decodedSshKey := credSecret.Data["sshKey"]
+		sshKey = base64.StdEncoding.EncodeToString(decodedSshKey)
+	}
+
 	providerName := moduleDefObj.Spec.Provider.Name
 	providerSource := moduleDefObj.Spec.Provider.Source
 
