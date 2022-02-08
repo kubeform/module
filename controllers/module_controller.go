@@ -51,6 +51,11 @@ type ModuleReconciler struct {
 //+kubebuilder:rbac:groups=tf.kubeform.com,resources=modules,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=tf.kubeform.com,resources=modules/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=tf.kubeform.com,resources=modules/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=events,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=tf.kubeform.com,resources=moduledefinitions,verbs=get;list;watch;create;update;patch;delete
 
 func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	//_ = log.FromContext(ctx)

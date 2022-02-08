@@ -169,10 +169,10 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 	source := moduleDefObj.Spec.ModuleRef.Git.Ref
 	sshKey := ""
 
-	credName := moduleDefObj.Spec.ModuleRef.Git.Cred.Name
-	credNamespace := moduleDefObj.Spec.ModuleRef.Git.Cred.Namespace
+	if moduleDefObj.Spec.ModuleRef.Git.Cred != nil {
+		credName := moduleDefObj.Spec.ModuleRef.Git.Cred.Name
+		credNamespace := moduleDefObj.Spec.ModuleRef.Git.Cred.Namespace
 
-	if credName != "" {
 		if credNamespace == "" {
 			credNamespace = "default"
 		}
@@ -377,9 +377,9 @@ func initialUpdateStatus(rClient client.Client, ctx context.Context, gv schema.G
 	typedStruct := structs.New(typedObj)
 	conditionsVal := reflect.ValueOf(typedStruct.Field("Status").Field("Conditions").Value())
 	conditions := conditionsVal.Interface().([]kmapi.Condition)
-	if kmapi.HasCondition(conditions, "Stalled") {
-		return nil
-	}
+	//if kmapi.HasCondition(conditions, "Stalled") {
+	//	return nil
+	//}
 
 	phase := status.InProgressStatus
 	if flag {
