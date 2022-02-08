@@ -24,7 +24,7 @@ import (
 
 type Git struct {
 	Ref  string                `json:"ref"`
-	Cred apiv1.ObjectReference `json:"cred,omitempty"`
+	Cred *apiv1.ObjectReference `json:"cred,omitempty"`
 }
 
 type ModuleRef struct {
