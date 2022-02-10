@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -59,14 +58,12 @@ type ModuleReconciler struct {
 
 func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	//_ = log.FromContext(ctx)
-	fmt.Println("got into the Reconcile")
 	log := r.Log.WithValues("module", req.NamespacedName)
-	fmt.Println("before gvk")
-	// TODO(user): your logic here
+
 	gvk := r.Gvk
 	var obj unstructured.Unstructured
 	obj.SetGroupVersionKind(gvk)
-	fmt.Println("before the r.Get")
+
 	if err := r.Get(ctx, req.NamespacedName, &obj); err != nil {
 		log.Error(err, "unable to fetch Module")
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
@@ -76,7 +73,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	rClient := r.Client
 	secretKey := r.SecretKey
-	fmt.Println("before StartProcess")
+
 	return ctrl.Result{}, StartProcess(rClient, ctx, gvk.GroupVersion(), &obj, secretKey)
 }
 
