@@ -105,7 +105,6 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 
 	errList := validator.Validate(context.TODO(), tempObj)
 	if len(errList) > 0 {
-		fmt.Println(errList.ToAggregate().Error())
 		return errList.ToAggregate()
 	}
 
