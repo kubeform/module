@@ -159,8 +159,18 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 	}
 	src := source
 
+	sourceSlice := strings.Split(source, "/")
+	if len(sourceSlice) == 0 {
+		return fmt.Errorf("given github repo source link is invalid")
+	}
+	hostName := sourceSlice[0]
+
 	if token != "" {
-		src = "https://" + token + "@" + src + ".git"
+		if hostName == "github.com" || hostName == "bitbucket.org" {
+			src = "https://" + token + "@" + src + ".git"
+		} else if hostName == "gitlab.com" {
+			src = "https://oauth2:" + token + "@" + src + ".git"
+		}
 	} else {
 		src = "https://" + src + ".git"
 	}
@@ -170,10 +180,6 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 		return err
 	}
 
-	sourceSlice := strings.Split(source, "/")
-	if len(sourceSlice) == 0 {
-		return fmt.Errorf("given github repo source link is invalid")
-	}
 	repoName := sourceSlice[len(sourceSlice)-1]
 	path = path + "/" + repoName
 
