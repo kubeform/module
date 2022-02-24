@@ -19,7 +19,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM ubuntu:latest
+FROM ubuntu:20.04
 WORKDIR /
 COPY --from=builder /workspace/manager .
 
@@ -32,7 +32,5 @@ RUN set -x \
   && unzip terraform_1.1.5_linux_amd64.zip \
   && chmod 755 terraform \
   && mv terraform /bin/terraform
-
-#USER 65532:65532
 
 ENTRYPOINT ["/manager"]

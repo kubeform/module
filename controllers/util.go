@@ -75,7 +75,6 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 
 	moduleDefObj := v1alpha1.ModuleDefinition{}
 	reqNamespacedName := types.NamespacedName{
-		//Namespace: moduleDefNamespace,
 		Name: moduleDef,
 	}
 
@@ -152,7 +151,7 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 	providerName := moduleDefObj.Spec.Provider.Name
 	providerSource := moduleDefObj.Spec.Provider.Source
 
-	path := "/tmp/" + moduleName
+	path := filepath.Join("/tmp", moduleName)
 	err = createGitRepoTempPath(path)
 	if err != nil {
 		return err
@@ -164,26 +163,36 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 		return fmt.Errorf("given github repo source link is invalid")
 	}
 	hostName := sourceSlice[0]
+	repoName := sourceSlice[len(sourceSlice)-1]
 
 	if token != "" {
-		if hostName == "github.com" || hostName == "bitbucket.org" {
+		// for bitbucket token need to be in the format of "username:app-password"
+		// for github and gitlab it's only the personal access token
+		if strings.Contains(hostName, "github.com") || strings.Contains(hostName, "bitbucket.org") {
 			src = "https://" + token + "@" + src + ".git"
-		} else if hostName == "gitlab.com" {
+		} else if strings.Contains(hostName, "gitlab.com") {
 			src = "https://oauth2:" + token + "@" + src + ".git"
 		}
 	} else {
 		src = "https://" + src + ".git"
 	}
 
-	err = gitRepoClone(path, src)
+	repoPath := filepath.Join(path, repoName)
+	err = gitRepoClone(path, src, repoPath)
 	if err != nil {
 		return err
 	}
 
-	repoName := sourceSlice[len(sourceSlice)-1]
-	path = path + "/" + repoName
+	ref := ""
+	if moduleDefObj.Spec.ModuleRef.Git.CheckOut != nil {
+		ref = *moduleDefObj.Spec.ModuleRef.Git.CheckOut
+	}
+	err = checkGitRef(repoPath, ref)
+	if err != nil {
+		return err
+	}
 
-	mainTfJson, err := mainTFJson(rClient, ctx, path, providerName, providerSource, moduleName, obj)
+	mainTfJson, err := mainTFJson(rClient, ctx, repoPath, providerName, providerSource, moduleName, obj)
 	if err != nil {
 		return err
 	}
@@ -194,6 +203,9 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 
 	jsnSchemaPropsForOutput := moduleDefObj.Spec.Schema.Properties["output"]
 	err = generateOutputTFFile(outputFile, moduleName, jsnSchemaPropsForOutput)
+	if err != nil {
+		return err
+	}
 
 	err = terraformInit(resPath)
 	if err != nil {
@@ -246,28 +258,41 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 
 func createGitRepoTempPath(path string) error {
 	_, err := os.Stat(path)
-	if !os.IsNotExist(err) {
-		err = os.RemoveAll(path)
+	if os.IsNotExist(err) {
+		err = os.MkdirAll(path, 0777)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = os.MkdirAll(path, 0777)
-	if err != nil {
-		return err
+	return nil
+}
+
+func gitRepoClone(path, src, repoPath string) error {
+	_, err := os.Stat(repoPath)
+	if os.IsNotExist(err) {
+		cmd := exec.Command("git", "clone", src)
+		cmd.Dir = path
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func gitRepoClone(path, src string) error {
-	cmd := exec.Command("git", "clone", src)
+func checkGitRef(path, ref string) error {
+	if ref == "" {
+		return nil
+	}
+
+	cmd := exec.Command("git", "checkout", ref)
 	cmd.Dir = path
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if err != nil {
+	if err := cmd.Run(); err != nil {
 		return err
 	}
 
@@ -371,9 +396,6 @@ func initialUpdateStatus(rClient client.Client, ctx context.Context, gv schema.G
 	typedStruct := structs.New(typedObj)
 	conditionsVal := reflect.ValueOf(typedStruct.Field("Status").Field("Conditions").Value())
 	conditions := conditionsVal.Interface().([]kmapi.Condition)
-	//if kmapi.HasCondition(conditions, "Stalled") {
-	//	return nil
-	//}
 
 	phase := status.InProgressStatus
 	if flag {
