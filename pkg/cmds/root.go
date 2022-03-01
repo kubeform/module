@@ -1,4 +1,4 @@
-package main
+package cmds
 
 import (
 	"github.com/spf13/cobra"
@@ -8,7 +8,7 @@ import (
 
 func NewRootCmd(version string) *cobra.Command {
 	var rootCmd = &cobra.Command{
-		Use:               "kf-module-controller",
+		Use:               "kubeform-module",
 		DisableAutoGenTag: true,
 		PersistentPreRun: func(c *cobra.Command, args []string) {
 			cli.SendAnalytics(c, version)
@@ -17,7 +17,7 @@ func NewRootCmd(version string) *cobra.Command {
 	rootCmd.PersistentFlags().BoolVar(&cli.EnableAnalytics, "enable-analytics", cli.EnableAnalytics, "Send analytical events to Google Analytics")
 
 	rootCmd.AddCommand(v.NewCmdVersion())
-	rootCmd.AddCommand(NewCmdRun(version))
+	rootCmd.AddCommand(NewCmdRun())
 
 	return rootCmd
 }

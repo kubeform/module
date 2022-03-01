@@ -1,6 +1,7 @@
 package main
 
 import (
+	"kubeform.dev/module/pkg/cmds"
 	"log"
 
 	_ "go.bytebuilders.dev/license-verifier/info"
@@ -11,7 +12,7 @@ import (
 )
 
 func main() {
-	rootCmd := NewRootCmd(Version)
+	rootCmd := cmds.NewRootCmd(Version)
 	logs.Init(rootCmd, true)
 	log.SetOutput(logs.HTTPLogger{})
 	defer logs.FlushLogs()

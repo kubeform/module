@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package cmds
 
 import (
 	"fmt"
@@ -43,7 +43,7 @@ import (
 	"k8s.io/klog/v2/klogr"
 	"kmodules.xyz/client-go/tools/queue"
 	tfv1alpha1 "kubeform.dev/module/api/v1alpha1"
-	"kubeform.dev/module/controllers"
+	"kubeform.dev/module/pkg/controller"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -67,7 +67,7 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-func NewCmdRun(version string) *cobra.Command {
+func NewCmdRun() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:               "run",
 		Short:             "Launch Kubeform Module controller",
@@ -131,7 +131,7 @@ func NewCmdRun(version string) *cobra.Command {
 				}, mapper, fn.CreateEvent)
 			}
 
-			if err = (&controllers.ModuleReconciler{
+			if err = (&controller.ModuleReconciler{
 				Client: mgr.GetClient(),
 				Log:    ctrl.Log.WithName("controllers").WithName("Module"),
 				Gvk: schema.GroupVersionKind{

@@ -6,7 +6,7 @@ ENFORCE_LICENSE    ?=
 
 GO_PKG   := kubefrom.dev
 REPO     := $(notdir $(shell pwd))
-BIN      := module
+BIN      := kubeform-module
 COMPRESS ?= no
 
 # Where to push the docker image.
@@ -120,16 +120,6 @@ version:
 	@echo ::set-output name=git_branch::$(git_branch)
 	@echo ::set-output name=commit_hash::$(commit_hash)
 	@echo ::set-output name=commit_timestamp::$(commit_timestamp)
-
-# Generate gen-controllers
-.PHONY: gen-controllers
-gen-controllers:
-	@echo "Generating controller"
-	@provider-$(PROVIDER)-gen --controller-path=$$(pwd)
-	@$(MAKE) add-license fmt --no-print-directory
-
-gen:
-	@true
 
 fmt: $(BUILD_DIRS)
 	@docker run                                                 \
@@ -353,25 +343,24 @@ chart-dependencies:
 .PHONY: install
 install:
 	cd ../installer; \
-	helm install kubeform-provider-$(PROVIDER) charts/kubeform-provider-$(PROVIDER) --wait \
+	helm install kubeform-module charts/kubeform-module --wait \
 		--namespace=$(KUBE_NAMESPACE) \
 		--create-namespace \
-		--set-file kubeform-provider.license=$(LICENSE_FILE) \
-		--set kubeform-provider.operator.registry=$(REGISTRY) \
-		--set kubeform-provider.operator.repository=$(BIN) \
-		--set kubeform-provider.operator.tag=$(TAG) \
+		--set-file license=$(LICENSE_FILE) \
+		--set operator.registry=$(REGISTRY) \
+		--set operator.repository=$(BIN) \
+		--set operator.tag=$(TAG) \
 		--set imagePullPolicy=$(IMAGE_PULL_POLICY) \
-		--set crds.domain=true \
 		$(IMAGE_PULL_SECRETS);
 
 .PHONY: uninstall
 uninstall:
 	@cd ../installer; \
-	helm uninstall kubeform-provider-$(PROVIDER) --namespace=$(KUBE_NAMESPACE) || true
+	helm uninstall kubeform-module --namespace=$(KUBE_NAMESPACE) || true
 
 .PHONY: purge
 purge: uninstall
-	kubectl delete crds -l app.kubernetes.io/name=$(PROVIDER).kubeform.com
+	kubectl delete crds -l app.kubernetes.io/name=*.kubeform.com
 
 .PHONY: verify
 verify: # verify-gen verify-modules
