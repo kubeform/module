@@ -58,6 +58,8 @@ TAG_DBG          := $(VERSION)-dbg_$(OS)_$(ARCH)
 
 GO_VERSION       ?= 1.17
 BUILD_IMAGE      ?= appscode/golang-dev:$(GO_VERSION)
+CODE_GENERATOR_IMAGE ?= appscode/gengo:release-1.21
+CRD_OPTIONS          ?= "crd:allowDangerousTypes=true"
 
 OUTBIN = bin/$(OS)_$(ARCH)/$(BIN)
 ifeq ($(OS),windows)
@@ -323,6 +325,36 @@ lint: $(BUILD_DIRS)
 	    $(BUILD_IMAGE)                                          \
 	    golangci-lint run --enable $(ADDTL_LINTERS) --timeout=10m --skip-files="generated.*\.go$\" --skip-dirs-use-default --skip-dirs=client,vendor
 
+# Generate CRD manifests
+.PHONY: gen-crds
+gen-crds:
+	@echo "Generating CRD manifests"
+	@docker run --rm                        \
+		-u $$(id -u):$$(id -g)              \
+		-v /tmp:/.cache                     \
+		-v $$(pwd):$(DOCKER_REPO_ROOT)      \
+		-w $(DOCKER_REPO_ROOT)              \
+	    --env HTTP_PROXY=$(HTTP_PROXY)      \
+	    --env HTTPS_PROXY=$(HTTPS_PROXY)    \
+		$(CODE_GENERATOR_IMAGE)             \
+		controller-gen                      \
+			$(CRD_OPTIONS)                  \
+			paths="./api/..."              \
+			output:crd:artifacts:config=crds
+
+.PHONY: label-crds
+label-crds: $(BUILD_DIRS)
+	@for f in crds/*.yaml; do \
+		echo "applying app.kubernetes.io/name=kubeform label to $$f"; \
+		kubectl label --overwrite -f $$f --local=true -o yaml app.kubernetes.io/part-of=kubeform.com > bin/crd.yaml; \
+		mv bin/crd.yaml $$f; \
+		kubectl label --overwrite -f $$f --local=true -o yaml app.kubernetes.io/name=module.kubeform.com > bin/crd.yaml; \
+		mv bin/crd.yaml $$f; \
+	done
+
+.PHONY: manifests
+manifests: gen-crds label-crds
+
 $(BUILD_DIRS):
 	@mkdir -p $@
 
@@ -363,7 +395,7 @@ purge: uninstall
 	kubectl delete crds -l app.kubernetes.io/name=*.kubeform.com
 
 .PHONY: verify
-verify: # verify-gen verify-modules
+verify: verify-manifests # verify-modules
 	true
 
 .PHONY: verify-modules
@@ -374,10 +406,10 @@ verify-modules:
 		echo "go module files are out of date"; exit 1; \
 	fi
 
-.PHONY: verify-gen
-verify-gen: gen fmt
+.PHONY: verify-manifests
+verify-manifests: manifests fmt
 	@if !(git diff --exit-code HEAD); then \
-		echo "files are out of date, run make gen fmt"; exit 1; \
+		echo "manifests files are out of date"; exit 1; \
 	fi
 
 .PHONY: add-license
