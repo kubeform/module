@@ -20,14 +20,20 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"ekyu.moe/base91"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"reflect"
+	"strings"
+
+	"ekyu.moe/base91"
 	"github.com/fatih/structs"
 	"github.com/gobuffalo/flect"
 	"gocloud.dev/secrets"
 	_ "gocloud.dev/secrets/localsecrets"
-	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -37,13 +43,8 @@ import (
 	"kmodules.xyz/client-go/meta"
 	resourcevalidator "kmodules.xyz/resource-validator"
 	"kubeform.dev/module/api/v1alpha1"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"reflect"
 	"sigs.k8s.io/cli-utils/pkg/kstatus/status"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 )
 
 func StartProcess(rClient client.Client, ctx context.Context, gv schema.GroupVersion, obj *unstructured.Unstructured, secretKey string) error {
@@ -100,7 +101,7 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 	tempObj := &unstructured.Unstructured{
 		Object: input,
 	}
-	unstructured.SetNestedField(tempObj.Object, "temp-obj", "metadata", "name")
+	err = unstructured.SetNestedField(tempObj.Object, "temp-obj", "metadata", "name")
 
 	errList := validator.Validate(context.TODO(), tempObj)
 	if len(errList) > 0 {
@@ -689,7 +690,7 @@ func generateOutputTFFile(outputFile, moduleName string, outputJsonSchemaProps v
 	if os.IsNotExist(err) {
 		outputData := []byte(``)
 		outputNames := []string{}
-		for key, _ := range outputJsonSchemaProps.Properties {
+		for key := range outputJsonSchemaProps.Properties {
 			outputNames = append(outputNames, key)
 		}
 

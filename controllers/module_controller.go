@@ -18,14 +18,17 @@ package controllers
 
 import (
 	"context"
+	"path/filepath"
+
 	"github.com/go-logr/logr"
+	auditlib "go.bytebuilders.dev/audit/lib"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/klog/v2"
 	meta_util "kmodules.xyz/client-go/meta"
 	tfv1alpha1 "kubeform.dev/module/api/v1alpha1"
-	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -78,7 +81,14 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *ModuleReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
+func (r *ModuleReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager, auditor *auditlib.EventPublisher, restrictToNamespace string) error {
+	if auditor != nil {
+		if err := auditor.SetupWithManager(ctx, mgr, &tfv1alpha1.Module{}); err != nil {
+			klog.Error(err, "unable to set up auditor", tfv1alpha1.Module{}.APIVersion, tfv1alpha1.Module{}.Kind)
+			return err
+		}
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&tfv1alpha1.Module{}).
 		WithEventFilter(predicate.Funcs{

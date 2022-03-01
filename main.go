@@ -1,103 +1,22 @@
-/*
-Copyright AppsCode Inc. and Contributors
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package main
 
 import (
-	"flag"
-	"os"
+	"log"
 
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/klog/v2"
-
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
+	_ "go.bytebuilders.dev/license-verifier/info"
+	"gomodules.xyz/logs"
+	_ "k8s.io/client-go/kubernetes/fake"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/klog/v2/klogr"
-	ctrl "sigs.k8s.io/controller-runtime"
-
-	tfv1alpha1 "kubeform.dev/module/api/v1alpha1"
-	"kubeform.dev/module/controllers"
-	//+kubebuilder:scaffold:imports
+	"k8s.io/klog/v2"
 )
-
-var (
-	scheme   = clientgoscheme.Scheme
-	setupLog = ctrl.Log.WithName("setup")
-)
-
-func init() {
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
-	utilruntime.Must(tfv1alpha1.AddToScheme(scheme))
-	//+kubebuilder:scaffold:scheme
-}
 
 func main() {
-	var metricsAddr string
-	var enableLeaderElection bool
-	var probeAddr string
-	var secretKey string
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
-		"Enable leader election for controller manager. "+
-			"Enabling this will ensure there is only one active controller manager.")
-	flag.StringVar(&secretKey, "secret-key", "YXBwc2NvZGVrdWJlZm9ybXNlY3JldGtleWFhYWFhYQo=", "The base64 encoded secret key to use during encode and decode tfstate")
-	flag.Parse()
+	rootCmd := NewRootCmd(Version)
+	logs.Init(rootCmd, true)
+	log.SetOutput(logs.HTTPLogger{})
+	defer logs.FlushLogs()
 
-	klog.Infoln("Starting module controller...")
-	ctrl.SetLogger(klogr.New())
-	ctx := ctrl.SetupSignalHandler()
-
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
-		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "0e49653b.kubeform.com",
-	})
-	if err != nil {
-		setupLog.Error(err, "unable to start manager")
-		os.Exit(1)
-	}
-
-	if err = (&controllers.ModuleReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Module"),
-		Gvk: schema.GroupVersionKind{
-			Group:   "tf.kubeform.com",
-			Version: "v1alpha1",
-			Kind:    "Module",
-		},
-		SecretKey: secretKey,
-		Scheme:    mgr.GetScheme(),
-	}).SetupWithManager(ctx, mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Module")
-		os.Exit(1)
-	}
-	//+kubebuilder:scaffold:builder
-
-	setupLog.Info("starting manager")
-	if err := mgr.Start(ctx); err != nil {
-		setupLog.Error(err, "problem running manager")
-		os.Exit(1)
+	if err := rootCmd.Execute(); err != nil {
+		klog.Fatal(err)
 	}
 }
