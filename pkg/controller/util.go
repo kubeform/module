@@ -97,11 +97,16 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 	}
 
 	validator, err := resourcevalidator.New(false, schema.GroupVersionKind{}, openapiV3Schema)
-
+	if err != nil {
+		return err
+	}
 	tempObj := &unstructured.Unstructured{
 		Object: input,
 	}
 	err = unstructured.SetNestedField(tempObj.Object, "temp-obj", "metadata", "name")
+	if err != nil {
+		return err
+	}
 
 	errList := validator.Validate(context.TODO(), tempObj)
 	if len(errList) > 0 {
