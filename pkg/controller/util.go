@@ -197,7 +197,7 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(mainFile, mainTfJson, 0777)
+	err = ioutil.WriteFile(mainFile, mainTfJson, 0o777)
 	if err != nil {
 		return err
 	}
@@ -260,7 +260,7 @@ func reconcile(rClient client.Client, ctx context.Context, gv schema.GroupVersio
 func createGitRepoTempPath(path string) error {
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
-		err = os.MkdirAll(path, 0777)
+		err = os.MkdirAll(path, 0o777)
 		if err != nil {
 			return err
 		}
@@ -537,7 +537,7 @@ func removeFinalizer(ctx context.Context, rClient client.Client, u *unstructured
 func createFiles(resPath, mainFile string) error {
 	_, err := os.Stat(resPath)
 	if os.IsNotExist(err) {
-		err := os.MkdirAll(resPath, 0777)
+		err := os.MkdirAll(resPath, 0o777)
 		if err != nil {
 			return err
 		}
@@ -570,7 +570,7 @@ func createTFStateFile(filePath string, gv schema.GroupVersion, obj *unstructure
 			return err
 		}
 
-		err = ioutil.WriteFile(filePath, decodedData, 0644)
+		err = ioutil.WriteFile(filePath, decodedData, 0o644)
 		if err != nil {
 			return fmt.Errorf("failed to write file hash : %s", err.Error())
 		}
@@ -701,7 +701,7 @@ func generateOutputTFFile(outputFile, moduleName string, outputJsonSchemaProps v
 	`)...)
 		}
 
-		err = ioutil.WriteFile(outputFile, outputData, 0644)
+		err = ioutil.WriteFile(outputFile, outputData, 0o644)
 		if err != nil {
 			return err
 		}

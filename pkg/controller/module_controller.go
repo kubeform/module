@@ -37,9 +37,7 @@ import (
 
 const KFCFinalizer = "kfc.io"
 
-var (
-	basePath = filepath.Join("/tmp", ".kfc")
-)
+var basePath = filepath.Join("/tmp", ".kfc")
 
 // ModuleReconciler reconciles a Module object
 type ModuleReconciler struct {

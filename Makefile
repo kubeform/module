@@ -50,8 +50,8 @@ endif
 ### These variables should not need tweaking.
 ###
 
-SRC_PKGS := controllers
-SRC_DIRS := $(SRC_PKGS) api *.go # directories which hold app source (not vendored)
+SRC_PKGS := pkg cmd
+SRC_DIRS := $(SRC_PKGS) api # directories which hold app source (not vendored)
 
 DOCKER_PLATFORMS := linux/amd64 linux/arm64
 BIN_PLATFORMS    := $(DOCKER_PLATFORMS) windows/amd64 darwin/amd64

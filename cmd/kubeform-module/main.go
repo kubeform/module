@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"kubeform.dev/module/pkg/cmds"
 	"log"
 
 	_ "go.bytebuilders.dev/license-verifier/info"
@@ -25,6 +24,7 @@ import (
 	_ "k8s.io/client-go/kubernetes/fake"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/klog/v2"
+	"kubeform.dev/module/pkg/cmds"
 )
 
 func main() {

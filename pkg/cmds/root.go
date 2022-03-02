@@ -23,7 +23,7 @@ import (
 )
 
 func NewRootCmd(version string) *cobra.Command {
-	var rootCmd = &cobra.Command{
+	rootCmd := &cobra.Command{
 		Use:               "kubeform-module",
 		DisableAutoGenTag: true,
 		PersistentPreRun: func(c *cobra.Command, args []string) {
