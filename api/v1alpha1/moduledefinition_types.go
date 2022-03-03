@@ -19,10 +19,17 @@ package v1alpha1
 import (
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apiv1 "kmodules.xyz/client-go/api/v1"
 )
 
+type Git struct {
+	Ref      string                 `json:"ref"`
+	CheckOut *string                `json:"checkOut,omitempty"`
+	Cred     *apiv1.ObjectReference `json:"cred,omitempty"`
+}
+
 type ModuleRef struct {
-	TfMarketplace string `json:"tfMarketplace"`
+	Git Git `json:"git,omitempty"`
 }
 
 type Provider struct {
@@ -38,11 +45,11 @@ type ModuleDefinitionSpec struct {
 }
 
 // ModuleDefinitionStatus defines the observed state of ModuleDefinition
-type ModuleDefinitionStatus struct {
-}
+type ModuleDefinitionStatus struct{}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:scope=Cluster
 
 // ModuleDefinition is the Schema for the moduledefinitions API
 type ModuleDefinition struct {
