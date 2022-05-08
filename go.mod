@@ -17,18 +17,18 @@ require (
 	k8s.io/apimachinery v0.22.1
 	k8s.io/client-go v0.22.1
 	k8s.io/klog/v2 v2.9.0
-	kmodules.xyz/client-go v0.0.0-20220203031013-1de48437aaf3
+	kmodules.xyz/client-go v0.0.0-20220317213815-2a6d5a5784f2
 	kmodules.xyz/resource-validator v0.0.0-20211025154137-6a5a20ec7581
 	sigs.k8s.io/cli-utils v0.26.1
 	sigs.k8s.io/controller-runtime v0.10.0
 )
 
 require (
-	go.bytebuilders.dev/audit v0.0.19
+	go.bytebuilders.dev/audit v0.0.20
 	go.bytebuilders.dev/license-verifier v0.9.7
 	go.bytebuilders.dev/license-verifier/kubernetes v0.9.7
 	gomodules.xyz/logs v0.0.6
-	gomodules.xyz/x v0.0.10
+	gomodules.xyz/x v0.0.13
 )
 
 require (
@@ -86,7 +86,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
-	github.com/nats-io/nats.go v1.13.0 // indirect
+	github.com/nats-io/nats.go v1.15.0 // indirect
 	github.com/nats-io/nkeys v0.3.0 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
@@ -117,11 +117,11 @@ require (
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gomodules.xyz/clock v0.0.0-20200817085942-06523dba733f // indirect
-	gomodules.xyz/encoding v0.0.2 // indirect
+	gomodules.xyz/encoding v0.0.4 // indirect
 	gomodules.xyz/flags v0.1.3 // indirect
 	gomodules.xyz/homedir v0.1.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
-	gomodules.xyz/mergo v0.3.13-0.20210702100041-9d62ff8ece4d // indirect
+	gomodules.xyz/mergo v0.3.13-0.20220214162359-48efe39fd402 // indirect
 	gomodules.xyz/pointer v0.1.0 // indirect
 	gomodules.xyz/sets v0.2.1 // indirect
 	gomodules.xyz/sync v0.1.0 // indirect
@@ -143,8 +143,8 @@ require (
 	k8s.io/kubectl v0.21.1 // indirect
 	k8s.io/utils v0.0.0-20210802155522-efc7438f0176 // indirect
 	kmodules.xyz/custom-resources v0.0.0-20220208103158-61b298634e43 // indirect
-	kmodules.xyz/offshoot-api v0.0.0-20210829122105-6f4d481b0c61 // indirect
-	kmodules.xyz/resource-metadata v0.9.4 // indirect
+	kmodules.xyz/offshoot-api v0.0.0-20220419215722-c7fc995091d3 // indirect
+	kmodules.xyz/resource-metadata v0.10.16-0.20220419233724-fbd1b7e25b05 // indirect
 	kmodules.xyz/resource-metrics v0.0.8 // indirect
 	sigs.k8s.io/kustomize/api v0.8.8 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.10.17 // indirect
