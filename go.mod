@@ -28,7 +28,7 @@ require (
 	go.bytebuilders.dev/license-verifier v0.9.7
 	go.bytebuilders.dev/license-verifier/kubernetes v0.9.7
 	gomodules.xyz/logs v0.0.6
-	gomodules.xyz/x v0.0.13
+	gomodules.xyz/x v0.0.14
 )
 
 require (
